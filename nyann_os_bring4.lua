@@ -81,26 +81,43 @@ Attack.Dist = function(model,dist) return (Root.Position - model:FindFirstChild(
 Attack.DistH = function(model,dist) return (Root.Position - model:FindFirstChild("HumanoidRootPart").Position).Magnitude > dist end
 Attack.Kill = function(model,Succes)
   if model and Succes then
+  -- Stay on current stack until all dead
+  if StackStillAlive and StackStillAlive() then
+    local stackMob = GetStackTarget and GetStackTarget()
+    if stackMob then model = stackMob end
+  end
   if not model:GetAttribute("Locked") then model:SetAttribute("Locked",model.HumanoidRootPart.CFrame) end
-  PosMon = model:GetAttribute("Locked").Position
-  BringEnemy()
+  if not (StackStillAlive and StackStillAlive()) then
+    PosMon = model:GetAttribute("Locked").Position
+    _G.StackName = model.Name
+  end
+  BringEnemy(model)
   EquipWeapon(_G.SelectWeapon)
   local Equipped = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool")
-  local ToolTip = Equipped.ToolTip
-  if ToolTip == "Blox Fruit" then _tp(model.HumanoidRootPart.CFrame * CFrame.new(0,10,0) * CFrame.Angles(0,math.rad(90),0)) else _tp(model.HumanoidRootPart.CFrame * CFrame.new(0,30,0) * CFrame.Angles(0,math.rad(180),0))end
-  if RandomCFrame then wait(.5)_tp(model.HumanoidRootPart.CFrame * CFrame.new(0, 30, 25)) wait(.5)_tp(model.HumanoidRootPart.CFrame * CFrame.new(25, 30, 0)) wait(.5)_tp(model.HumanoidRootPart.CFrame * CFrame.new(-25, 30 ,0)) wait(.5)_tp(model.HumanoidRootPart.CFrame * CFrame.new(0, 30, 25)) wait(.5)_tp(model.HumanoidRootPart.CFrame * CFrame.new(-25, 30, 0))end
+  local ToolTip = Equipped and Equipped.ToolTip
+  local targetCF = model.HumanoidRootPart.CFrame
+  if ToolTip == "Blox Fruit" then _tp(targetCF * CFrame.new(0,10,0) * CFrame.Angles(0,math.rad(90),0)) else _tp(targetCF * CFrame.new(0,30,0) * CFrame.Angles(0,math.rad(180),0))end
+  if RandomCFrame then wait(.5)_tp(targetCF * CFrame.new(0, 30, 25)) wait(.5)_tp(targetCF * CFrame.new(25, 30, 0)) wait(.5)_tp(targetCF * CFrame.new(-25, 30 ,0)) wait(.5)_tp(targetCF * CFrame.new(0, 30, 25)) wait(.5)_tp(targetCF * CFrame.new(-25, 30, 0))end
   end
 end
 Attack.Kill2 = function(model,Succes)
   if model and Succes then
+  if StackStillAlive and StackStillAlive() then
+    local stackMob = GetStackTarget and GetStackTarget()
+    if stackMob then model = stackMob end
+  end
   if not model:GetAttribute("Locked") then model:SetAttribute("Locked",model.HumanoidRootPart.CFrame) end
-  PosMon = model:GetAttribute("Locked").Position
-  BringEnemy()
+  if not (StackStillAlive and StackStillAlive()) then
+    PosMon = model:GetAttribute("Locked").Position
+    _G.StackName = model.Name
+  end
+  BringEnemy(model)
   EquipWeapon(_G.SelectWeapon)
   local Equipped = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool")
-  local ToolTip = Equipped.ToolTip
-  if ToolTip == "Blox Fruit" then _tp(model.HumanoidRootPart.CFrame * CFrame.new(0,10,0) * CFrame.Angles(0,math.rad(90),0)) else _tp(model.HumanoidRootPart.CFrame * CFrame.new(0,30,8) * CFrame.Angles(0,math.rad(180),0))end
-  if RandomCFrame then wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(0, 30, 25)) wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(25, 30, 0)) wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(-25, 30 ,0)) wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(0, 30, 25)) wait(0.1)_tp(model.HumanoidRootPart.CFrame * CFrame.new(-25, 30, 0))end
+  local ToolTip = Equipped and Equipped.ToolTip
+  local targetCF = model.HumanoidRootPart.CFrame
+  if ToolTip == "Blox Fruit" then _tp(targetCF * CFrame.new(0,10,0) * CFrame.Angles(0,math.rad(90),0)) else _tp(targetCF * CFrame.new(0,30,8) * CFrame.Angles(0,math.rad(180),0))end
+  if RandomCFrame then wait(0.1)_tp(targetCF * CFrame.new(0, 30, 25)) wait(0.1)_tp(targetCF * CFrame.new(25, 30, 0)) wait(0.1)_tp(targetCF * CFrame.new(-25, 30 ,0)) wait(0.1)_tp(targetCF * CFrame.new(0, 30, 25)) wait(0.1)_tp(targetCF * CFrame.new(-25, 30, 0))end
   end
 end
 Attack.KillSea = function(model,Succes)
@@ -179,15 +196,17 @@ statsSetings = function(Num, value)
   end
 end
 --==================================================
--- BRING SYSTEM (Stack below player - no head lag)
+-- BRING SYSTEM (Max 4 mobs - stay until clear)
 --==================================================
 _G = _G or {}
 _B = true
 PosMon = PosMon or nil
 _G.BringRange = _G.BringRange or 350
 _G.MaxBringMobs = _G.MaxBringMobs or 4
-_G.MobHeight = _G.MobHeight or 30   -- player stands above mobs
-_G.BringYOffset = _G.BringYOffset or 0  -- mobs stack at locked Y
+_G.MobHeight = _G.MobHeight or 30
+_G.BringYOffset = _G.BringYOffset or 0
+_G.ClearRange = _G.ClearRange or 60   -- range to check if stack is still alive
+_G.StackName = _G.StackName or nil    -- current mob type being farmed
 
 local function IsRaidMob(mob)
     if not mob then return true end
@@ -212,6 +231,53 @@ local function Network(part)
     return part.ReceiveAge == 0 and not part.Anchored
 end
 
+-- Count alive mobs still in current stack
+function CountStackAlive()
+    if not PosMon then return 0 end
+    local n = 0
+    local range = _G.ClearRange or 60
+    local nameFilter = _G.StackName
+    for _, v in ipairs(workspace.Enemies:GetChildren()) do
+        if IsRaidMob(v) then continue end
+        local hum = v:FindFirstChildOfClass("Humanoid")
+        local root = v:FindFirstChild("HumanoidRootPart")
+        if hum and root and hum.Health > 0 then
+            if nameFilter and v.Name ~= nameFilter then continue end
+            if (root.Position - PosMon).Magnitude <= range then
+                n = n + 1
+            end
+        end
+    end
+    return n
+end
+
+-- True if still need to finish current stack (don't switch area)
+function StackStillAlive()
+    return CountStackAlive() > 0
+end
+
+-- Get nearest alive mob in current stack (for Kill to stay)
+function GetStackTarget()
+    if not PosMon then return nil end
+    local best, bestDist = nil, math.huge
+    local range = _G.ClearRange or 60
+    local nameFilter = _G.StackName
+    for _, v in ipairs(workspace.Enemies:GetChildren()) do
+        if IsRaidMob(v) then continue end
+        local hum = v:FindFirstChildOfClass("Humanoid")
+        local root = v:FindFirstChild("HumanoidRootPart")
+        if hum and root and hum.Health > 0 then
+            if nameFilter and v.Name ~= nameFilter then continue end
+            local d = (root.Position - PosMon).Magnitude
+            if d <= range and d < bestDist then
+                bestDist = d
+                best = v
+            end
+        end
+    end
+    return best
+end
+
 BringEnemy = function(Mon)
     local plr = game.Players.LocalPlayer
     local char = plr.Character
@@ -224,21 +290,26 @@ BringEnemy = function(Mon)
         end
     end)
 
-    -- Target = locked mob position (FEET level), NEVER player head
     local targetPos
     if typeof(PosMon) == "Vector3" then
         targetPos = PosMon
     elseif Mon and Mon:FindFirstChild("HumanoidRootPart") then
-        targetPos = Mon.HumanoidRootPart.Position
-        PosMon = targetPos
+        -- Only set NEW PosMon if previous stack is dead
+        if not StackStillAlive() then
+            targetPos = Mon.HumanoidRootPart.Position
+            PosMon = targetPos
+            _G.StackName = Mon.Name
+        else
+            targetPos = PosMon
+        end
     else
-        -- fallback: under player, not on head
         targetPos = hrp.Position - Vector3.new(0, (_G.MobHeight or 30), 0)
     end
 
-    -- Keep Y at ground/locked level
+    if not targetPos then return end
+
     local stackY = targetPos.Y + (_G.BringYOffset or 0)
-    local mainName = Mon and Mon.Name or nil
+    local mainName = _G.StackName or (Mon and Mon.Name) or nil
     local count = 0
     local range = _G.BringRange or 350
     local maxMobs = _G.MaxBringMobs or 4
@@ -257,7 +328,6 @@ BringEnemy = function(Mon)
 
         count = count + 1
 
-        -- Hold still
         local bv = root:FindFirstChild("BringBV")
         if not bv then
             bv = Instance.new("BodyVelocity")
@@ -280,15 +350,13 @@ BringEnemy = function(Mon)
             hum.PlatformStand = true
         end)
 
-        -- Stack at FEET level with small spread (not on player head)
         if Network(root) or dist > 6 then
-            local ox = ((count - 1) % 5) * 1.2 - 2.4
-            local oz = math.floor((count - 1) / 5) * 1.2 - 1.2
+            local ox = ((count - 1) % 2) * 1.5 - 0.75
+            local oz = math.floor((count - 1) / 2) * 1.5 - 0.75
             root.CFrame = CFrame.new(targetPos.X + ox, stackY, targetPos.Z + oz)
         end
     end
 
-    -- Freeze main mob at same level
     if Mon then
         local mRoot = Mon:FindFirstChild("HumanoidRootPart")
         local mHum = Mon:FindFirstChildOfClass("Humanoid")
@@ -302,9 +370,6 @@ BringEnemy = function(Mon)
                 bv.Velocity = Vector3.zero
                 bv.Parent = mRoot
             end
-            if Network(mRoot) then
-                mRoot.CFrame = CFrame.new(targetPos.X, stackY, targetPos.Z)
-            end
         end
         if mHum then
             mHum.WalkSpeed = 0
@@ -314,12 +379,18 @@ BringEnemy = function(Mon)
     end
 end
 
--- Continuous stack loop
+-- Continuous bring + clear PosMon when stack dead
 task.spawn(function()
-    while task.wait(0.4) do
+    while task.wait(0.35) do
         pcall(function()
             if PosMon then
-                BringEnemy()
+                if CountStackAlive() <= 0 then
+                    -- Stack cleared -> allow next area
+                    PosMon = nil
+                    _G.StackName = nil
+                else
+                    BringEnemy()
+                end
             end
         end)
     end
