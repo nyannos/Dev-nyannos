@@ -1,4 +1,4 @@
-loadstring(game:HttpGet("https://pastefy.app/q1hJpvcW/raw"))()
+loadstring(game:HttpGet("https://pastefy.app/RsSsgDv7/raw"))()
 do
   ply = game.Players
   plr = ply.LocalPlayer
@@ -1386,10 +1386,10 @@ QuestNeta = function()
     }
 end
 
-local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/tlredz/Library/refs/heads/main/redz-V5-remake/main.luau"))()
+local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/id202azh/id_905/refs/heads/main/raw%20(1).txt"))()
 local Window = redzlib:MakeWindow({
-    Title = "oz hub",
-    SubTitle = "by real_@nyann,by real_@oz",
+    Title = "nyann os",
+    SubTitle = "by real_@nyann",
     SaveFolder = "nyannnaiget.json"
 })
 
@@ -1398,7 +1398,7 @@ local Minimizer = Window:NewMinimizer({
 })
 
 local MobileButton = Minimizer:CreateMobileMinimizer({
-  Image = "rbxassetid://86224472741926",
+  Image = "rbxassetid://94678517792779",
   BackgroundColor3 = Color3.fromRGB(0, 255, 254)
 })
 
