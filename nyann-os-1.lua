@@ -171,9 +171,8 @@ end
 -- ==========================================
 -- GỌI THỬ ĐỂ TEST:
 -- ==========================================
-NotificacaoNightMystic("nyann os Notification 🔔", "New Update")
+NotificacaoNightMystic("Loading...", "nyann os")
 task.wait(0.8)
-NotificacaoNightMystic("nyann os Thông Báo 🔔", "Cập Nhật Mới")
 
 local HttpService = Services.HttpService
 local FolderName = "Ai hỏi.json"
@@ -2942,8 +2941,8 @@ end
 
 local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/nyannos/test/refs/heads/main/redzlib_with_search-1.lua"))()
 local Window = redzlib:MakeWindow({
-    Title = "nyann os",
-    SubTitle = "by real_@nyann",
+    Title = "nyann os [Beta]",
+    SubTitle = "Blox fruit | by real_@nyann",
     SaveFolder = true,
     Image = "82107905019656"
 })
@@ -3037,13 +3036,13 @@ Discord:AddParagraph({
     "Thêm phần hiển thị fps,thêm phần tìm kiếm, hết rồi xem làm gì nữa."
 })
 Discord:AddDiscordInvite({
-    Name = "nyann | Community👑",
+    Name = "Nyann | Community👑",
     Description = "Vào discord nhận thông báo nha!",
     Logo = "rbxassetid://94678517792779",
     Invite = "https://discord.gg/HzNaDWHH3"
 })
 Discord:AddDiscordInvite({
-    Name = "nyann get script 👑",
+    Name = "Nyann get script 👑",
     Description = "Vào discord nhận thông báo update wed nha!",
     Logo = "rbxassetid://94678517792779",
     Invite = "https://discord.gg/3zuHDZCybR"
@@ -3352,7 +3351,7 @@ v1:AddButton({
 
 v4:AddDropdown({
     Name = "Select Attack Mode",
-    Options = {"Normal Attack", "Fast Attack", "Super Attack", "Ultra Attack", "Ultimte Attack"},
+    Options = {"Normal Attack", "Fast Attack", "Super Attack", "nyann Attack", "Super nyann Attack"},
     Default = "Fast Attack",
     Multi = false,
     Callback = function(mode)
