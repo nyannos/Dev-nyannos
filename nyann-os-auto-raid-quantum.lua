@@ -171,9 +171,8 @@ end
 -- ==========================================
 -- GỌI THỬ ĐỂ TEST:
 -- ==========================================
-NotificacaoNightMystic("Load...")
+NotificacaoNightMystic("Load...", "")
 task.wait(0.8)
-NotificacaoNightMystic("Đang Tải...")
 
 local HttpService = Services.HttpService
 local FolderName = "nyann.json"
@@ -2943,7 +2942,7 @@ end
 local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/nyannos/test/refs/heads/main/redzlib_with_search-1.lua"))()
 local Window = redzlib:MakeWindow({
     Title = "nyann os [Beta]",
-    SubTitle = "by real_@nyann",
+    SubTitle = "Blox fruit | by real_@nyann",
     SaveFolder = true,
     Image = "82107905019656"
 })
@@ -3034,16 +3033,16 @@ Discord:AddParagraph({
 })
 Discord:AddParagraph({
     "Những thứ đã update",
-    "Thêm phần hiển thị fps,thêm phần tìm kiếm, hết rồi xem làm gì nữa,xin lỗi nhưng hiện tại tôi chưa có code auto raid nên mọi người dùng đỡ Quantum onyx nhé."
+    "Thêm phần hiển thị fps,thêm phần tìm kiếm, hết rồi xem làm gì nữa,xin lỗi nhưng hiện tại tôi chưa có code auto raid nên mọi người dùng đỡ Quantum Onyx nhé."
 })
 Discord:AddDiscordInvite({
-    Name = "nyann | Community👑",
+    Name = "Nyann | Community👑",
     Description = "Vào discord nhận thông báo nha!",
     Logo = "rbxassetid://94678517792779",
     Invite = "https://discord.gg/HzNaDWHH3"
 })
 Discord:AddDiscordInvite({
-    Name = "nyann get script 👑",
+    Name = "Nyann get script 👑",
     Description = "Vào discord nhận thông báo update wed nha!",
     Logo = "rbxassetid://94678517792779",
     Invite = "https://discord.gg/3zuHDZCybR"
