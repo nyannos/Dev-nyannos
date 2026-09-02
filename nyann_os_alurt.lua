@@ -2887,7 +2887,7 @@ local v3 = Window:MakeTab({
     Icon = "layers"
 })
 local v4 = Window:MakeTab({
-    Title = "Settings Farm",
+    Title = "Settings",
     Icon = "settings"
 })
 local v5 = Window:MakeTab({
