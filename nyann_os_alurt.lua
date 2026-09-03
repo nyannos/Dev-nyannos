@@ -54,7 +54,7 @@ pcall(function()
 end)
 task.wait(2)
 pcall(function()
-    NyannNotify("Script beta nên còn lỗi nhé", "Nếu gặp lỗi thì nhắn trong discord nhé.", {
+    NyannNotify("Script beta nên còn lỗi", "Nếu gặp lỗi thì nhắn trong discord nhé.", {
         Audio = "rbxassetid://",
         Length = 4,
         Image = "rbxassetid://6031068421",
@@ -72,8 +72,8 @@ G.Alive = G.Alive or function(model)
 end
 
 local HttpService = Services.HttpService
-local FolderName = "Ai hỏi.json"
-local FileName = "Settings.json"
+local FolderName = "nyannBW.json"
+local FileName = "nyannosFz.json"
 local FullPath = FolderName .. "/" .. FileName
 
 if makefolder and not isfolder(FolderName) then 
@@ -2853,7 +2853,7 @@ end
 
 local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/nyannos/test/refs/heads/main/redzlib_with_search-1.lua"))()
 local Window = redzlib:MakeWindow({
-    Title = "nyann os [Beta]",
+    Title = "nyann os [Beta] Free No Key",
     SubTitle = "Blox fruit | by real_@nyann",
     SaveFolder = true,
     Image = "82107905019656"
@@ -2941,20 +2941,20 @@ local Miragecheck = v1:AddParagraph({
 })
 Discord:AddParagraph({
     "Thông báo",
-    "Script đã update. Thời gian update 17-8-2026, nếu có lỗi hãy nhắn qua các trang mạng xã hội của tôi!"
+    "Script đã update. Thời gian update 3-9-2026, nếu có lỗi hãy nhắn qua các trang mạng xã hội của tôi!"
 })
 Discord:AddParagraph({
     "Những thứ đã update",
-    "Thêm phần hiển thị fps,thêm phần tìm kiếm, hết rồi xem làm gì nữa."
+    "Thêm phần hiển thị fps, thêm phần tìm kiếm, chỉnh lại phần thông báo."
 })
 Discord:AddDiscordInvite({
     Name = "Nyann | Community👑",
     Description = "Vào discord nhận thông báo nha!",
     Logo = "rbxassetid://94678517792779",
-    Invite = "https://discord.gg/HzNaDWHH3"
+    Invite = "https://discord.gg/k6MRH4KxTv"
 })
 Discord:AddDiscordInvite({
-    Name = "Nyann get script 👑",
+    Name = "Máy chủ siêu cấp lá đu đủ ☠️",
     Description = "Vào discord nhận thông báo update wed nha!",
     Logo = "rbxassetid://94678517792779",
     Invite = "https://discord.gg/3zuHDZCybR"
