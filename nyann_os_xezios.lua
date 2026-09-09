@@ -1688,15 +1688,30 @@ end
 
 function Window:Notify(opts)
   opts = opts or {}
-  local msg = tostring(opts.Content or opts.Message or opts.Title or "nyann os")
+  local title = tostring(opts.Title or opts.Name or "nyann os")
+  local msg = tostring(opts.Content or opts.Message or "")
+  local dur = opts.Duration or 4
+  -- Prefer Alurt (B&W) if loaded
+  if getgenv().NyannAlurt and getgenv().NyannAlurt.CreateNode then
+    pcall(function()
+      getgenv().NyannAlurt.CreateNode({
+        Title = title,
+        Content = msg,
+        Length = dur,
+        Image = opts.Image or "rbxassetid://17616650704",
+        BarColor = Color3.fromRGB(255, 255, 255),
+      })
+    end)
+    return
+  end
   pcall(function()
     if Library and Library.Notifications and Library.Notifications.Create then
-      Library.Notifications:Create({ Name = msg })
+      Library.Notifications:Create({ Name = title .. (msg ~= "" and (": " .. msg) or "") })
     else
       game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = tostring(opts.Title or "nyann os"),
+        Title = title,
         Text = msg,
-        Duration = opts.Duration or 4,
+        Duration = dur,
       })
     end
   end)
@@ -1852,7 +1867,6 @@ local Tabs = {
     Combat = Window:MakeTab({ Title = "Local Player", Icon = "rbxassetid://" }),
     Travel = Window:MakeTab({ Title = "Teleport", Icon = "" }),
     Shop = Window:MakeTab({ Title = "Shopping", Icon = "rbxassetid://" }),
-    Music = Window:MakeTab({ Title = "Music", Icon = "rbxassetid://6031068420" }),
     Misc = Window:MakeTab({ Title = "Miscellaneous", Icon = "rbxassetid://" })
 }
 
@@ -11755,395 +11769,6 @@ Tabs.Shop:AddButton({
     end
 })
 
--- =========================================================
--- MUSIC PLAYER + VOLUME (Miscellaneous)
--- Playlist: https://pastefy.app/0QU2aU7c/raw
--- =========================================================
-Tabs.Music:AddSection("Music Player", "Left")
-
-_G.MusicVolume = _G.MusicVolume or 0.6
-_G.GameVolume = _G.GameVolume or 1
-_G.MuteGame = _G.MuteGame or false
-_G.MusicPlaying = false
-_G.MusicLoop = true
-_G.SelectedSong = _G.SelectedSong or nil
-
-local MusicFolder = "nyann_os_music"
-pcall(function()
-  if makefolder and not isfolder(MusicFolder) then makefolder(MusicFolder) end
-end)
-
-local MusicSound = Instance.new("Sound")
-MusicSound.Name = "NyannMusicPlayer"
-MusicSound.Looped = true
-MusicSound.Volume = _G.MusicVolume
-MusicSound.Parent = game:GetService("SoundService")
-
-local Playlist = {}
-local SongNames = {}
-local SongMap = {} -- name -> entry
-
-pcall(function()
-  local HttpService = game:GetService("HttpService")
-  local raw = game:HttpGet("https://pastefy.app/0QU2aU7c/raw")
-  local data = HttpService:JSONDecode(raw)
-  if type(data) == "table" then
-    for _, song in ipairs(data) do
-      if song.name and song.download_url then
-        local label = tostring(song.name)
-        if song.artist and song.artist ~= "" then
-          label = label .. " — " .. tostring(song.artist)
-        end
-        table.insert(Playlist, song)
-        table.insert(SongNames, label)
-        SongMap[label] = song
-      end
-    end
-  end
-end)
-
-if #SongNames == 0 then
-  SongNames = {"(Playlist load failed)"}
-end
-
-local function StopMusic()
-  pcall(function()
-    MusicSound:Stop()
-    MusicSound.SoundId = ""
-  end)
-  _G.MusicPlaying = false
-end
-
-local function PlaySong(label)
-  local entry = SongMap[label]
-  if not entry or not entry.download_url then
-    pcall(function()
-      Window:Notify({ Title = "Music", Content = "Song not found", Duration = 3 })
-    end)
-    return
-  end
-
-  _G.SelectedSong = label
-  StopMusic()
-
-  task.spawn(function()
-    local ok, err = pcall(function()
-      local url = entry.download_url
-      local safeName = (entry.name or "track"):gsub("[^%w%-%_ ]", ""):gsub("%s+", "_")
-      if #safeName < 2 then safeName = "track" end
-      local filePath = MusicFolder .. "/" .. safeName .. ".mp3"
-
-      -- download if needed
-      if not (isfile and isfile(filePath)) then
-        local body = game:HttpGet(url)
-        if type(body) ~= "string" or #body < 1000 then
-          error("download failed")
-        end
-        writefile(filePath, body)
-      end
-
-      local asset
-      if getcustomasset then
-        asset = getcustomasset(filePath)
-      elseif getsynasset then
-        asset = getsynasset(filePath)
-      else
-        error("no getcustomasset")
-      end
-
-      MusicSound.SoundId = asset
-      MusicSound.Looped = _G.MusicLoop == true
-      MusicSound.Volume = tonumber(_G.MusicVolume) or 0.6
-      MusicSound:Play()
-      _G.MusicPlaying = true
-    end)
-
-    pcall(function()
-      if ok then
-        Window:Notify({
-          Title = "Music",
-          Content = "Playing: " .. tostring(entry.name),
-          Duration = 3,
-        })
-      else
-        Window:Notify({
-          Title = "Music",
-          Content = "Play failed (executor may block audio)",
-          Duration = 4,
-        })
-      end
-    end)
-  end)
-end
-
--- Strong mute: silence ALL game sounds, keep only NyannMusicPlayer
-local _MutedOriginal = {} -- [Sound] = original Volume
-local _MuteHooks = {}
-local function IsHubMusic(s)
-  return s == MusicSound or (s and s.Name == "NyannMusicPlayer")
-end
-
-local function SilenceSound(s)
-  if not s or not s:IsA("Sound") or IsHubMusic(s) then return end
-  if _MutedOriginal[s] == nil then
-    _MutedOriginal[s] = s.Volume
-  end
-  pcall(function()
-    s.Volume = 0
-    -- also kill playback energy without destroying (safer for game)
-    if s.Playing and _G.MuteGameHard then
-      s:Stop()
-    end
-  end)
-end
-
-local function MuteAllGameSounds()
-  local roots = {
-    workspace,
-    game:GetService("SoundService"),
-    game:GetService("Players"),
-    game:GetService("Lighting"),
-    game:GetService("ReplicatedStorage"),
-  }
-  pcall(function() table.insert(roots, game:GetService("CoreGui")) end)
-  pcall(function()
-    local pg = game.Players.LocalPlayer and game.Players.LocalPlayer:FindFirstChild("PlayerGui")
-    if pg then table.insert(roots, pg) end
-  end)
-
-  for _, root in ipairs(roots) do
-    pcall(function()
-      for _, s in ipairs(root:GetDescendants()) do
-        SilenceSound(s)
-      end
-    end)
-  end
-
-  -- global master volumes
-  pcall(function() game:GetService("SoundService").Volume = 0 end)
-  pcall(function()
-    local ugs = UserSettings():GetService("UserGameSettings")
-    if ugs then
-      if _G._SavedMasterVol == nil then _G._SavedMasterVol = ugs.MasterVolume end
-      ugs.MasterVolume = 0
-    end
-  end)
-end
-
-local function RestoreGameSounds()
-  local vol = math.clamp(tonumber(_G.GameVolume) or 1, 0, 1)
-  pcall(function() game:GetService("SoundService").Volume = vol end)
-  pcall(function()
-    local ugs = UserSettings():GetService("UserGameSettings")
-    if ugs then
-      ugs.MasterVolume = (_G._SavedMasterVol ~= nil) and _G._SavedMasterVol or 1
-    end
-  end)
-  for s, orig in pairs(_MutedOriginal) do
-    pcall(function()
-      if s and s.Parent then
-        s.Volume = (typeof(orig) == "number") and orig or vol
-      end
-    end)
-  end
-  table.clear(_MutedOriginal)
-end
-
-local function EnsureMuteHooks()
-  if _G._NyannMuteHooked then return end
-  _G._NyannMuteHooked = true
-
-  local function onDesc(obj)
-    if not _G.MuteGame then return end
-    if obj:IsA("Sound") then
-      SilenceSound(obj)
-      pcall(function()
-        obj:GetPropertyChangedSignal("Volume"):Connect(function()
-          if _G.MuteGame and not IsHubMusic(obj) and obj.Volume ~= 0 then
-            obj.Volume = 0
-          end
-        end)
-      end)
-      pcall(function()
-        obj:GetPropertyChangedSignal("Playing"):Connect(function()
-          if _G.MuteGame and not IsHubMusic(obj) and obj.Playing then
-            obj.Volume = 0
-          end
-        end)
-      end)
-    end
-  end
-
-  pcall(function() workspace.DescendantAdded:Connect(onDesc) end)
-  pcall(function() game:GetService("SoundService").DescendantAdded:Connect(onDesc) end)
-  pcall(function()
-    local plr = game.Players.LocalPlayer
-    if plr then
-      plr.DescendantAdded:Connect(onDesc)
-      if plr:FindFirstChild("PlayerGui") then
-        plr.PlayerGui.DescendantAdded:Connect(onDesc)
-      end
-    end
-  end)
-end
-
-local function ApplyGameVolume()
-  EnsureMuteHooks()
-  if _G.MuteGame then
-    MuteAllGameSounds()
-  else
-    RestoreGameSounds()
-  end
-  -- hub music always independent
-  pcall(function()
-    MusicSound.Volume = tonumber(_G.MusicVolume) or 0.6
-  end)
-end
-
--- LEFT: Music controls
-Tabs.Music:AddDropdown({
-  Name = "Select Song",
-  Description = "Playlist from pastefy",
-  Options = SongNames,
-  Default = SongNames[1],
-  Multi = false,
-  Callback = function(v)
-    _G.SelectedSong = v
-  end,
-})
-
-Tabs.Music:AddToggle({
-  Name = "Play Music",
-  Description = "Play / stop selected song",
-  Default = false,
-  Callback = function(v)
-    if v then
-      PlaySong(_G.SelectedSong or SongNames[1])
-    else
-      StopMusic()
-    end
-  end,
-})
-
-Tabs.Music:AddToggle({
-  Name = "Loop Music",
-  Description = "Repeat current track",
-  Default = true,
-  Callback = function(v)
-    _G.MusicLoop = v
-    pcall(function() MusicSound.Looped = v end)
-  end,
-})
-
-Tabs.Music:AddButton({
-  Name = "Play Selected",
-  Description = "Start current song",
-  Callback = function()
-    PlaySong(_G.SelectedSong or SongNames[1])
-  end,
-})
-
-Tabs.Music:AddButton({
-  Name = "Stop Music",
-  Description = "Stop playback",
-  Callback = function()
-    StopMusic()
-  end,
-})
-
-Tabs.Music:AddButton({
-  Name = "Next Random Song",
-  Description = "Play a random track",
-  Callback = function()
-    if #Playlist == 0 then return end
-    local pick = SongNames[math.random(1, #SongNames)]
-    _G.SelectedSong = pick
-    PlaySong(pick)
-  end,
-})
-
--- RIGHT-side style section: volume controls
-Tabs.Music:AddSection("Volume Controls", "Right")
-
-Tabs.Music:AddSlider({
-  Name = "Music Volume",
-  Description = "Hub music volume",
-  Min = 0,
-  Max = 100,
-  Default = math.floor((_G.MusicVolume or 0.6) * 100),
-  Callback = function(v)
-    local n = (tonumber(v) or 60) / 100
-    _G.MusicVolume = n
-    pcall(function() MusicSound.Volume = n end)
-  end,
-})
-
-Tabs.Music:AddSlider({
-  Name = "Game Volume",
-  Description = "Roblox / game sound volume",
-  Min = 0,
-  Max = 100,
-  Default = math.floor((_G.GameVolume or 1) * 100),
-  Callback = function(v)
-    _G.GameVolume = (tonumber(v) or 100) / 100
-    if not _G.MuteGame then
-      ApplyGameVolume()
-    end
-  end,
-})
-
-Tabs.Music:AddToggle({
-  Name = "Mute Game Sounds",
-  Description = "Force silence ALL game audio (hub music stays)",
-  Default = false,
-  Callback = function(v)
-    _G.MuteGame = v
-    ApplyGameVolume()
-  end,
-})
-
-Tabs.Music:AddButton({
-  Name = "Reset Game Volume",
-  Description = "Restore default game volume",
-  Callback = function()
-    _G.MuteGame = false
-    _G.GameVolume = 1
-    ApplyGameVolume()
-    pcall(function()
-      Window:Notify({ Title = "Volume", Content = "Game volume reset to 100%", Duration = 2 })
-    end)
-  end,
-})
-
--- Aggressive mute loop (game often respawns sounds)
-task.spawn(function()
-  while task.wait(0.35) do
-    pcall(function()
-      if _G.MuteGame then
-        MuteAllGameSounds()
-      end
-      if MusicSound then
-        MusicSound.Volume = tonumber(_G.MusicVolume) or 0.6
-      end
-    end)
-  end
-end)
-
--- Heartbeat: force any playing non-hub sound to 0 while muted
-task.spawn(function()
-  local RS = game:GetService("RunService")
-  RS.Heartbeat:Connect(function()
-    if not _G.MuteGame then return end
-    pcall(function()
-      for _, s in ipairs(game:GetService("SoundService"):GetDescendants()) do
-        if s:IsA("Sound") and not IsHubMusic(s) and s.Volume ~= 0 then
-          s.Volume = 0
-        end
-      end
-    end)
-  end)
-end)
-
 Tabs.Misc:AddSection("Server - Function")
 Tabs.Misc:AddButton({
     Name = "Redeem All Codes",
@@ -12944,12 +12569,46 @@ end
 
 StartMainLoops()
 
-Window:Notify({
-  Title = "Welcome to nyann os by real _@nyannnokonoko",
-  Content = "Load...",
-  Image = "rbxassetid://94678517792779",
-  Duration = 5
-})
+-- Alurt notifications (black & white)
+local Alurt
+pcall(function()
+  Alurt = loadstring(game:HttpGet("https://raw.githubusercontent.com/azir-py/project/refs/heads/main/Zwolf/AlurtUI.lua"))()
+  getgenv().NyannAlurt = Alurt
+end)
+
+task.spawn(function()
+  if not Alurt or not Alurt.CreateNode then
+    pcall(function()
+      Window:Notify({
+        Title = "Welcome to nyann os!",
+        Content = "Thanks you for use",
+        Duration = 5,
+      })
+    end)
+    return
+  end
+
+  -- White on black theme
+  local notif1 = Alurt.CreateNode({
+    Title = "Welcome to nyann os!",
+    Content = "Thanks you for use",
+    Audio = "rbxassetid://17525305988",
+    Length = 8,
+    Image = "rbxassetid://17616650704",
+    BarColor = Color3.fromRGB(255, 255, 255), -- white bar
+  })
+
+  task.wait(2)
+
+  local notif2 = Alurt.CreateNode({
+    Title = "Script beta nên còn lỗi nhé",
+    Content = "",
+    Audio = "rbxassetid://17208361335",
+    Length = 4,
+    Image = "rbxassetid://6031068421",
+    BarColor = Color3.fromRGB(200, 200, 200), -- light gray
+  })
+end)
 -- Script hiển thị tên trên đầu nhân vật
 -- Created by: nyann os by real _@nyannnokonoko
 
