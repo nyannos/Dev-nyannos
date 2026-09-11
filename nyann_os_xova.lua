@@ -634,7 +634,7 @@ sea3 = (game.PlaceId == 7449423635 or game.PlaceId == 100117331123089)
 
 local Settings = {
     ["Tween Speed"] = 1.5, -- bay (duration = distance/(100*speed))
-    ["Bypass Teleport"] = true,
+    ["Bypass Teleport"] = false, -- tắt bypass reset (gây lỗi farm Cake/Bone/Level)
     ["Up Y"] = false,
     ["Up Y When Low Health"] = false,
     ["Same Y"] = false
@@ -809,26 +809,9 @@ function GetBypassCFrame(x)
 end
 
 function BypassTP(Target)
-    local Character = LocalPlayer.Character
-    if not Character then return end
-    
-    local Humanoid = WaitForHumanoid()
-    if not Humanoid or Humanoid.Health <= 0 then return end
-    
-    if CanBypassTeleport(Target) and GetBypassCFrame(Target) then
-        local TargetTP = GetBypassCFrame(Target)
-        if TargetTP and TargetTP:FindFirstChild("Part") then
-            Character.LastSpawnPoint.Disabled = true
-            ReplicatedStorage.Remotes.CommF_:InvokeServer("SetLastSpawnPoint", TargetTP.Name)
-            ReplicatedStorage.Remotes.CommF_:InvokeServer("SetSpawnPoint")
-            Character:PivotTo(TargetTP.Part.CFrame)
-            Humanoid:ChangeState(15)
-            
-            repeat 
-                task.wait() 
-            until LocalPlayer.Character and WaitForHumanoid() and WaitForHumanoid().Health > 0
-        end
-    end
+    -- Không dùng reset/kill (ChangeState 15) — dễ lỗi khi farm Cake / Bone / Level
+    -- Chỉ tween bình thường qua _tp
+    return
 end
 
 function totopofgreattree()
@@ -932,8 +915,10 @@ _tp = function(target)
     if not character or not character:FindFirstChild("HumanoidRootPart") then return end
     local rootPart = character.HumanoidRootPart
     
+    -- Không bypass-reset khi đang farm Cake / Bone / Level
+    local skipBypass = _G.Auto_Cake_Prince or _G.AutoFarm_Bone or _G.Level or _G.AutoFarmNear
     pcall(function()
-        if CanBypassTeleport(gg) then
+        if not skipBypass and Settings["Bypass Teleport"] and CanBypassTeleport(gg) then
             BypassTP(gg)
             task.wait(0.5)
         end
@@ -3226,6 +3211,19 @@ Cake = Tabs.Main:AddToggle({
     Default = false,
     Callback = function(Value)
     _G.Auto_Cake_Prince = Value
+    if Value then
+      -- bay tới đảo Cake (tween, không reset)
+      task.spawn(function()
+        pcall(function()
+          local cakeCF = CFrame.new(-2077, 252, -12373)
+          local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+          if hrp and (hrp.Position - cakeCF.Position).Magnitude > 200 then
+            shouldTween = true
+            _tp(cakeCF)
+          end
+        end)
+      end)
+    end
 end
 })
 
@@ -3495,6 +3493,19 @@ Tabs.Main:AddToggle({
     Default = false,
     Callback = function(Value)
         _G.AutoFarm_Bone = Value
+        if Value then
+          -- bay tới khu Bone (Haunted Castle)
+          task.spawn(function()
+            pcall(function()
+              local boneCF = CFrame.new(-8764, 142, 5963) -- Reborn Skeleton
+              local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+              if hrp and (hrp.Position - boneCF.Position).Magnitude > 200 then
+                shouldTween = true
+                _tp(boneCF)
+              end
+            end)
+          end)
+        end
     end
 })
 
